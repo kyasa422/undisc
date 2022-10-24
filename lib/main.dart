@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:undisc/assets/themes/themes.dart';
 import 'package:undisc/page/splash_screen/splash_screen.dart';
+import 'package:undisc/themes/themes.dart';
 
 void main() => runApp(const Undesc());
 
