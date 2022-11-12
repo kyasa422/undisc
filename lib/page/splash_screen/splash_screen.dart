@@ -1,4 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:undisc/page/email_nonactivated/email_nonactivated.dart';
+import 'package:undisc/page/home/main.dart';
 import 'package:undisc/page/login/login.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -12,17 +16,26 @@ class _MyWidgetState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    sleep();
+    if(FirebaseAuth.instance.currentUser != null){
+      if(FirebaseAuth.instance.currentUser!.emailVerified){
+        SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const Main()), (route) => false);     
+        });
+      }else{
+        SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const EmailNonActivated()), (route) => false);     
+        });
+      }
+    }else{
+      SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const Login()), (route) => false);
+      });
+    }
   }
 
-  Future sleep() async {
-    // Jangan dihapus biar ada sleep nya dulu sampe 5 detik nanti kalo dah 5 detik bakal ke login
-    return await Future.delayed(
-        const Duration(seconds: 5),
-        () => Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const Login()),
-            (route) => false));
+  @override
+  void dispose(){
+    super.dispose();
   }
 
   @override
@@ -52,12 +65,10 @@ class _MyWidgetState extends State<SplashScreen> {
               const SizedBox(
                 height: 200,
               ),
-              Container(
-                child: Image.asset(
-                  "lib/assets/images/image.splash.png",
-                  width: 210,
-                  height: 210,
-                ),
+              Image.asset(
+                "lib/assets/images/image.splash.png",
+                width: 210,
+                height: 210,
               )
             ],
           ),

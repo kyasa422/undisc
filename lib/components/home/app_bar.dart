@@ -38,9 +38,10 @@ Container appBar(BuildContext context, Size size) {
         ),
 
         InkWell(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Profile())),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Profile(uid: 'Jy2DE8Jj2zUEHtCS7Ty2oYKR3wG3',))),
           borderRadius: BorderRadius.circular(100.0),
           child: const Hero(
+            transitionOnUserGestures: true,
             tag: "Profile",
             child: CircleAvatar(
               backgroundImage: NetworkImage("https://eugeneputra.web.app/img/img1.jpg"),

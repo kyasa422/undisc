@@ -1,11 +1,43 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:undisc/components/card_discussions.dart';
 import 'package:undisc/lang/lang.dart';
+import 'package:undisc/page/profile/photo_zoom.dart';
+import 'package:undisc/page/settings/settings.dart';
+import 'package:undisc/page/splash_screen/splash_screen.dart';
 import 'package:undisc/themes/themes.dart';
 
-class Profile extends StatelessWidget {
-  const Profile({Key? key}) : super(key: key);
+class Profile extends StatefulWidget {
+  final String uid;
+  const Profile({Key? key, required this.uid}) : super(key: key);
+
+  @override
+  State<Profile> createState() => _ProfileState();
+}
+
+class _ProfileState extends State<Profile> {
+  late FirebaseAuth user;
+  late CollectionReference dbUser;
+
+  Map<String, dynamic> dataUser = {};
+
+  @override
+  void initState(){
+    super.initState();
+    user = FirebaseAuth.instance;
+    dbUser = FirebaseFirestore.instance.collection("users");
+    getData();
+  }
+
+  void getData() async{
+    await dbUser.where("uid", isEqualTo: widget.uid).get().then((value){
+      setState(() {
+        dataUser = value.docs.first.data() as Map<String, dynamic>;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +78,17 @@ class Profile extends StatelessWidget {
                       ),
                       child: Hero(
                         tag: "Profile",
-                        child: CircleAvatar(
+                        child: dataUser.isNotEmpty && dataUser["photoURL"] != null ? InkWell(
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PhotoZoom(urlPhoto: dataUser['photoURL']))),
+                          borderRadius: BorderRadius.circular(100.0),
+                          child: CircleAvatar(
+                            radius: (size.width + size.height) / 22.0,
+                            backgroundImage: NetworkImage(dataUser["photoURL"]),
+                          ),
+                        ) : CircleAvatar(
+                          backgroundColor: Themes().transparent,
                           radius: (size.width + size.height) / 22.0,
-                          backgroundImage: const NetworkImage("https://eugeneputra.web.app/img/img1.jpg"),
+                          backgroundImage: const AssetImage("lib/assets/images/user.png"),
                         ),
                       ),
                     ),
@@ -79,14 +119,14 @@ class Profile extends StatelessWidget {
                 const SizedBox(height: 30.0,),
 
                 Text(
-                  "Eugene Feilian Putra Rangga",
+                  dataUser.isNotEmpty ? dataUser["name"] : "...",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: (size.width + size.height) / 40.0
                   ),
                 ),
                 Text(
-                  "Teknik Informatika",
+                  dataUser.isNotEmpty ? dataUser["study_program"] : "...",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Themes().grey300,
@@ -116,18 +156,23 @@ class Profile extends StatelessWidget {
                     )
                   ]
                 ),
-                child: Chip(
-                  backgroundColor: Themes().primary,
-                  labelStyle: TextStyle(color: Themes().white),
-                  label: Wrap(
-                    spacing: 3.0,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      FaIcon(FontAwesomeIcons.userGear, size: 18.0, color: Themes().white,),
-                      const Text("Edit Profile"),
-                    ],
+                child: InkWell(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsProfile())),
+                  highlightColor: Themes().transparent,
+                  splashColor: Themes().transparent,
+                  child: Chip(
+                    backgroundColor: Themes().primary,
+                    labelStyle: TextStyle(color: Themes().white),
+                    label: Wrap(
+                      spacing: 3.0,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        FaIcon(FontAwesomeIcons.userGear, size: 18.0, color: Themes().white,),
+                        const Text("Edit Profile"),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(8.0),
                   ),
-                  padding: const EdgeInsets.all(8.0),
                 ),
               ),
               Container(
@@ -143,18 +188,79 @@ class Profile extends StatelessWidget {
                     )
                   ]
                 ),
-                child: Chip(
-                  backgroundColor: Themes().danger,
-                  labelStyle: TextStyle(color: Themes().white),
-                  label: Wrap(
-                    spacing: 3.0,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      FaIcon(FontAwesomeIcons.arrowRightFromBracket, size: 18.0, color: Themes().white,),
-                      const Text("Logout"),
-                    ],
+                child: InkWell(
+                  onTap: () => showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20.0)
+                      ),
+                      contentPadding: const EdgeInsets.all(30.0),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          FaIcon(FontAwesomeIcons.arrowRightFromBracket, size: (size.width + size.height) / 35.0,),
+                          const SizedBox(height: 25.0,),
+                          Text("Sign Out", style: TextStyle(fontWeight: FontWeight.bold, fontSize: (size.width + size.height) / 55.0),),
+                          const SizedBox(height: 10.0,),
+                          Text("Are you sure you want to leave?", style: TextStyle(color: Themes().grey400),),
+                          const SizedBox(height: 25.0,),
+                          Flex(
+                            direction: Axis.horizontal,
+                            children: [
+                              Expanded(
+                                child: MaterialButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  color: Themes().grey100,
+                                  textColor: Themes().grey500,
+                                  elevation: 0.0,
+                                  highlightElevation: 0.0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0)
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 15.0),
+                                  child: const Text("Cancel"),
+                                ),
+                              ),
+
+                              const SizedBox(width: 10.0,),
+
+                              Expanded(
+                                child: MaterialButton(
+                                  onPressed: () async => user.signOut().whenComplete(() => Navigator.push(context, MaterialPageRoute(builder: (_) => const SplashScreen()))),
+                                  color: Themes().danger,
+                                  textColor: Themes().white,
+                                  elevation: 0.0,
+                                  highlightElevation: 0.0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0)
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 15.0),
+                                  child: const Text("Yes"),
+                                ),
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
+                    )
                   ),
-                  padding: const EdgeInsets.all(8.0),
+                  highlightColor: Themes().transparent,
+                  splashColor: Themes().transparent,
+                  child: Chip(
+                    backgroundColor: Themes().danger,
+                    labelStyle: TextStyle(color: Themes().white),
+                    label: Wrap(
+                      spacing: 3.0,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        FaIcon(FontAwesomeIcons.arrowRightFromBracket, size: 18.0, color: Themes().white,),
+                        const Text("Logout"),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(8.0),
+                  ),
                 ),
               ),
             ],

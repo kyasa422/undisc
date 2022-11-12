@@ -40,11 +40,17 @@ dependencies:
   flutter_launcher_icons: "^0.10.0"
   countup: ^0.1.4
   badges: ^2.0.3
+  firebase_core: ^2.1.1
+  cloud_firestore: ^4.0.3
+  firebase_auth: ^4.1.0
+  crypt: ^4.2.1
+  firebase_storage: ^11.0.5
+  
 
 flutter_icons:
   android: "undisc"
   image_path: "lib/assets/images/icon.png"
-  min_sdk_android: 21
+  min_sdk_android: 19
 
 dev_dependencies:
   flutter_test:

@@ -6,15 +6,17 @@ class Themes{
   late Color dark;
   late Color white;
   late Color grey300;
+  late Color grey200;
   late Color grey100;
   late Color black54;
   late Color grey400;
   late Color grey500;
   late Color success;
   late Color danger;
+  late Color grey;
 
   Themes(){
-    primary = const Color.fromARGB(255, 48, 0, 100);
+    primary = const Color(0xFF310064);
     transparent = Colors.transparent;
     dark = Colors.black;
     white = Colors.white;
@@ -25,5 +27,7 @@ class Themes{
     grey500 = Colors.grey.shade500;
     success = Colors.green.shade400;
     danger = Colors.red.shade400;
+    grey = Colors.grey;
+    grey200 = Colors.grey.shade200;
   }
 }

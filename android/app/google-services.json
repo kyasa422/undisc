@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "552047873089",
+    "project_id": "undisc-dev",
+    "storage_bucket": "undisc-dev.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:552047873089:android:6a5c96781ccbf001290ac0",
+        "android_client_info": {
+          "package_name": "com.himti.undisc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "552047873089-8dar23dhrtci6022ibrcrf89eo092f0u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGkWZ_qSLRxr_58bCGcDVwVJa9T9aPOvY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "552047873089-8dar23dhrtci6022ibrcrf89eo092f0u.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

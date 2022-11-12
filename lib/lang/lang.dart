@@ -24,6 +24,11 @@ class Lang{
   late String send;
   late String success;
   late String pleaseWait;
+  late String fullName;
+  late String register;
+  late String studyProgram;
+  late String password;
+  late String repeat;
 
   Lang(){
     appName = "Undira Discussion";
