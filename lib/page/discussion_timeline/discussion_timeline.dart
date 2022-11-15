@@ -5,7 +5,8 @@ import 'package:undisc/lang/lang.dart';
 import 'package:undisc/themes/themes.dart';
 
 class DiscussionTimeline extends StatelessWidget {
-  const DiscussionTimeline({Key? key}) : super(key: key);
+  final String id;
+  const DiscussionTimeline({Key? key, required this.id}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

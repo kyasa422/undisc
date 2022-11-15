@@ -1,4 +1,3 @@
-import 'package:countup/countup.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
@@ -157,11 +156,8 @@ Container cardDiscussions(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Countup(
-                    begin: 0, 
-                    end: data['discussion']['voted'] != null ? double.tryParse(data['discussion']['voted'].toString()) ?? 0.0 : 0.0,
-                    duration: const Duration(seconds: 2),
-                    separator: ",",
+                  Text(
+                    data['voted'] != null ? data['voted'].toString() : "0.0",
                     style: TextStyle(
                       fontSize: (size.width + size.height) / 50.0
                     ),

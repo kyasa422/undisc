@@ -16,6 +16,7 @@ Container appBar(BuildContext context, Size size, Map<String, dynamic> data, {Fu
               "Hai, ",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
+                color: Themes().dark,
                 fontSize: (size.width + size.height) / 45.0
               )
             ),

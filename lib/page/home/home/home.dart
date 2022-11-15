@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:undisc/components/card_discussion_load.dart';
 import 'package:undisc/components/dialog_messages.dart';
 import 'package:undisc/page/discussion_details/discussion_details.dart';
 import 'package:undisc/page/discussion_timeline/discussion_timeline.dart';
@@ -19,7 +20,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   int pillCategoryContent = 1;
   int limitContent = 10;
-  String orderBy = "date";
+  String orderBy = "voted";
 
   late CollectionReference dbUsers;
   late CollectionReference dbVotedDiscussion;
@@ -41,148 +42,176 @@ class _HomeState extends State<Home> {
 
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 80.0),
-          children: [
-            // AppBar
-            FutureBuilder<QuerySnapshot<Object?>>(
-              future: dbUsers.where("uid", isEqualTo: user?.uid).get(),
-              builder: (context, snapshot) {
-                if(snapshot.connectionState == ConnectionState.waiting){
+        child: RefreshIndicator(
+          onRefresh: () async{
+            setState(() {});
+          },
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 80.0),
+            children: [
+              // AppBar
+              FutureBuilder<QuerySnapshot<Object?>>(
+                future: dbUsers.where("uid", isEqualTo: user?.uid).get(),
+                builder: (context, snapshot) {
+                  if(snapshot.connectionState == ConnectionState.waiting){
+                    return appBar(
+                      context, 
+                      size, 
+                      {
+                        "name": "...", 
+                        "photoURL": CircleAvatar(backgroundImage: const AssetImage('lib/assets/images/user.png'), backgroundColor: Themes().transparent,)
+                      }
+                    );
+                  }
+        
+                  Map<String, dynamic> dataUser = snapshot.data!.docs.single.data() as Map<String, dynamic>;
                   return appBar(
                     context, 
                     size, 
                     {
-                      "name": "...", 
-                      "photoURL": CircleAvatar(backgroundImage: const AssetImage('lib/assets/images/user.png'), backgroundColor: Themes().transparent,)
-                    }
+                      "name": dataUser['name'], 
+                      "photoURL": dataUser['photoURL'] != null ? 
+                        CircleAvatar(backgroundImage: NetworkImage(dataUser['photoURL']), backgroundColor: Themes().transparent,) : 
+                        CircleAvatar(backgroundImage: const AssetImage('lib/assets/images/user.png'), backgroundColor: Themes().transparent,)
+                    },
+                    onTapAvatar: () => Navigator.push(context, MaterialPageRoute(builder: (_) => Profile(uid: dataUser['uid']))),
                   );
                 }
-
-                Map<String, dynamic> dataUser = snapshot.data!.docs.single.data() as Map<String, dynamic>;
-                return appBar(
-                  context, 
-                  size, 
-                  {
-                    "name": dataUser['name'], 
-                    "photoURL": dataUser['photoURL'] != null ? 
-                      CircleAvatar(backgroundImage: NetworkImage(dataUser['photoURL']), backgroundColor: Themes().transparent,) : 
-                      CircleAvatar(backgroundImage: const AssetImage('lib/assets/images/user.png'), backgroundColor: Themes().transparent,)
-                  },
-                  onTapAvatar: () => Navigator.push(context, MaterialPageRoute(builder: (_) => Profile(uid: dataUser['uid']))),
-                );
-              }
-            ),
-            // End App Bar
-
-
-            const SizedBox(
-              height: 20.0,
-            ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Flex(
-                direction: Axis.horizontal,
-                children: [
-                  Expanded(
-                    child: pill(
-                      text: "Featured",
-                      active: pillCategoryContent == 1 ? true : false,
-                      onTap: () {
-                        setState((){
-                          pillCategoryContent = 1;
-                          orderBy = "voted";
-                        });
-                      }
-                    ),
-                  ),
-                  Expanded(
-                    child: pill(
-                      text: "Most Recent",
-                      active: pillCategoryContent == 2 ? true : false,
-                      onTap: () {
-                        setState((){
-                          pillCategoryContent = 2;
-                          orderBy = "date";
-                        });
-                      }
-                    ),
-                  ),
-                ],
               ),
-            ),
-
-            
-            const SizedBox(
-              height: 30.0,
-            ),
-            StreamBuilder<QuerySnapshot>(
-              stream: dbDiscussion.limit(limitContent).orderBy(orderBy, descending: true).snapshots(),
-              builder: (context, snapshot) {
-                if(snapshot.connectionState == ConnectionState.waiting){
-                  return const CircularProgressIndicator();
-                }
-
-                return Column(
-                  children: snapshot.data!.docs.map((e){
-                    Map<String, dynamic> dataDiscussion = e.data() as Map<String, dynamic>;
-
-                    return FutureBuilder<QuerySnapshot<Object?>>(
-                      future: dbUsers.where("uid", isEqualTo: dataDiscussion['uid']).get(),
-                      builder: ((context, snapshot) {
-                        if(snapshot.connectionState == ConnectionState.waiting){
-                          return const CircularProgressIndicator();
+              // End App Bar
+        
+        
+              const SizedBox(
+                height: 20.0,
+              ),
+        
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Flex(
+                  direction: Axis.horizontal,
+                  children: [
+                    Expanded(
+                      child: pill(
+                        text: "Featured",
+                        active: pillCategoryContent == 1 ? true : false,
+                        onTap: () {
+                          setState((){
+                            pillCategoryContent = 1;
+                            orderBy = "voted";
+                          });
                         }
-
-                        Map<String, dynamic> data = {"user": snapshot.data!.docs.single.data(), "discussion": dataDiscussion};
-                        return FutureBuilder<QuerySnapshot<Object?>>(
-                          future: dbVotedDiscussion.where("uid", isEqualTo: user!.uid).where("id_discussion", isEqualTo: e.id).get(),
-                          builder: (context, snapshot) {
-                            if(snapshot.connectionState == ConnectionState.waiting){
-                              return const CircularProgressIndicator();
-                            }
-
-                            return AnimatedContainer(
-                              margin: const EdgeInsets.only(bottom: 30.0),
-                              duration: const Duration(milliseconds: 500),
-                              child: cardDiscussions(
-                                size,
-                                data: data,
-                                onTapArticle: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DiscussionDetails())),
-                                onTapComment: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DiscussionDetails())),
-                                onTapStatus: data['user']['uid'] == user!.uid ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DiscussionTimeline())) : null,
-                                votedActive: snapshot.data!.size == 1 ? true : false,
-                                onTapVoted: () async {
-                                  if(snapshot.data!.size == 1){
-                                    await dbVotedDiscussion.doc(snapshot.data!.docs.single.id).delete().then((_) async{
-                                      await dbDiscussion.doc(e.id).update({"voted": data['discussion']['voted'] - 1});
-                                    }).catchError((_){
-                                      dialogMessages(context: context, title: "Error!", messages: "Server Error", size: size);
-                                    });
-                                  }else{
-                                    await dbVotedDiscussion.add({
-                                      "id_discussion": e.id,
-                                      "uid": user?.uid,
-                                      "date": DateTime.now()
-                                    }).then((_) async{
-                                      await dbDiscussion.doc(e.id).update({"voted": data['discussion']['voted'] + 1});
-                                    }).catchError((_){
-                                      dialogMessages(context: context, title: "Error!", messages: "Server Error", size: size);
-                                    });
-                                  }
-                                }
-                              ),
-                            );
-                          }
-                        );
-                      }),
+                      ),
+                    ),
+                    Expanded(
+                      child: pill(
+                        text: "Most Recent",
+                        active: pillCategoryContent == 2 ? true : false,
+                        onTap: () {
+                          setState((){
+                            pillCategoryContent = 2;
+                            orderBy = "date";
+                          });
+                        }
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+        
+              const SizedBox(
+                height: 30.0,
+              ),
+              FutureBuilder<QuerySnapshot<Object?>>(
+                future: dbDiscussion.limit(limitContent).orderBy(orderBy, descending: true).get(),
+                builder: (context, snapshot) {
+                  if(snapshot.connectionState == ConnectionState.waiting){
+                    return Column(
+                      children: List.generate(10, (index) => Container(margin: const EdgeInsets.only(bottom: 30.0), child: cardDiscussionsLoad(size))),
                     );
-                  }).toList()
-                );
-              }
-            ),
-          ],
+                  }
+
+                  if(snapshot.data!.size == 0){
+                        return Column(
+                          children: [
+                            Image.asset(
+                              "lib/assets/images/online_discussion.png",
+                              height: size.height / 1.7,
+                            ),
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 30.0),
+                              child: Text(
+                                "You haven't had a discussion yet. Make your discussion",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: (size.width + size.height) / 60.0
+                                ),
+                              )
+                            )
+                          ],
+                        );
+                      }
+        
+                  return Column(
+                    children: snapshot.data!.docs.map((e){
+                      Map<String, dynamic> dataDiscussion = e.data() as Map<String, dynamic>;
+        
+                      return FutureBuilder<QuerySnapshot<Object?>>(
+                        future: dbUsers.where("uid", isEqualTo: dataDiscussion['uid']).get(),
+                        builder: ((context, snapshotUser) {
+                          if(snapshotUser.connectionState == ConnectionState.waiting){
+                            return Container(margin: const EdgeInsets.only(bottom: 30.0), child: cardDiscussionsLoad(size));
+                          }
+        
+                          return StreamBuilder<QuerySnapshot>(
+                            stream: dbVotedDiscussion.where("id_discussion", isEqualTo: e.id).snapshots(),
+                            builder: (context, snapshot) {
+                              if(snapshot.connectionState == ConnectionState.waiting){
+                                return Container(margin: const EdgeInsets.only(bottom: 30.0), child: cardDiscussionsLoad(size));
+                              }
+        
+                              Map<String, dynamic> data = {"user": snapshotUser.data!.docs.single.data(), "discussion": dataDiscussion, "voted": snapshot.data!.size};
+                              int checkUserVoted = snapshot.data!.docs.where((element) => (element.data() as Map<String, dynamic>)['uid'] == user?.uid).toList().length;
+                              return AnimatedContainer(
+                                margin: const EdgeInsets.only(bottom: 30.0),
+                                duration: const Duration(milliseconds: 500),
+                                child: cardDiscussions(
+                                  size,
+                                  data: data,
+                                  onTapArticle: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DiscussionDetails())),
+                                  onTapComment: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DiscussionDetails())),
+                                  onTapStatus: data['user']['uid'] == user!.uid ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => DiscussionTimeline(id: e.id,))) : null,
+                                  votedActive: checkUserVoted == 1 ? true : false,
+                                  onTapVoted: () async {
+                                    if(checkUserVoted == 1){
+                                      await snapshot.data!.docs.where((element) => (element.data() as Map<String, dynamic>)['uid'] == user?.uid).single.reference.delete().then((_) async{
+                                        await e.reference.update({"voted": snapshot.data!.size - 1});
+                                      }).catchError((_){
+                                        dialogMessages(context: context, title: "Error!", messages: "Server Error", size: size);
+                                      });
+                                    }else{
+                                      await dbVotedDiscussion.add({
+                                        "id_discussion": e.id,
+                                        "uid": user?.uid,
+                                        "date": DateTime.now()
+                                      }).then((_) async{
+                                        await e.reference.update({"voted": snapshot.data!.size + 1});
+                                      }).catchError((_){
+                                        dialogMessages(context: context, title: "Error!", messages: "Server Error", size: size);
+                                      });
+                                    }
+                                  }
+                                ),
+                              );
+                            }
+                          );
+                        }),
+                      );
+                    }).toList()
+                  );
+                }
+              ),
+            ],
+          ),
         ),
       )
     );
