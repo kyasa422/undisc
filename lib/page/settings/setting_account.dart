@@ -1,13 +1,17 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypt/crypt.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart';
 import 'package:undisc/components/dialog_messages.dart';
 import 'package:undisc/components/dialog_waiting.dart';
 import 'package:undisc/page/splash_screen/splash_screen.dart';
 import '../../components/settings/list_tile_with_editing.dart';
 import '../../components/settings/modal_bottom_authenticate_password_for_change_email.dart';
-import '../../components/text_form_field.dart';
 import '../../themes/themes.dart';
 
 class SettingAccount extends StatefulWidget {
@@ -20,6 +24,7 @@ class SettingAccount extends StatefulWidget {
 class _SettingAccountState extends State<SettingAccount> {
   late User? user;
   late CollectionReference dbUser;
+  late Reference storage;
   Map<String, dynamic> dataUser = {};
 
   GlobalKey<FormState> formKeyEmail = GlobalKey<FormState>();
@@ -38,6 +43,7 @@ class _SettingAccountState extends State<SettingAccount> {
     super.initState();
     user = FirebaseAuth.instance.currentUser;
     dbUser = FirebaseFirestore.instance.collection("users");
+    storage = FirebaseStorage.instance.ref("users");
     getDataUser();
   }
 
@@ -165,7 +171,7 @@ class _SettingAccountState extends State<SettingAccount> {
                               Navigator.pop(context);
                               dialogMessages(context: context, title: "Error!", messages: "Server Error!", size: size);
                             });
-                        }on FirebaseAuthException catch(e){
+                        }on FirebaseAuthException catch(_){
                           Navigator.pop(context);
                           dialogMessages(context: context, title: "Error!", messages: "Server Error!", size: size);
                         }
@@ -194,9 +200,38 @@ class _SettingAccountState extends State<SettingAccount> {
       }
     }
 
-    void onSubmitChangePassword(){
-      if(formKeyPassword.currentState!.validate()){
-        print("OK");
+    void changeImage() async {
+      final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+      
+      if(pickedFile != null){
+        // ignore: use_build_context_synchronously
+        dialogWating(context, size);
+
+        await dbUser.where("uid", isEqualTo: dataUser['uid']).get()
+          .then((value) async{
+            Reference ref = storage.child("${value.docs.single.id}/photo.${basename(pickedFile.name.split('.').last)}");
+            await ref.putFile(File(pickedFile.path))
+            .then((p0) async{
+              p0.ref.getDownloadURL()
+                .then((url) async{
+                  await user?.updatePhotoURL(url)
+                    .then((_) async{
+                      await dbUser.doc(value.docs.single.id).update({"photoURL": url})
+                        .then((_){
+                          getDataUser();
+                          Navigator.pop(context);
+                        }
+                      );
+                    }
+                  );
+                }
+              );
+            }
+          );
+          }).catchError((_){
+            Navigator.pop(context);
+            dialogMessages(context: context, title: "Error!", messages: "Server Error!", size: size);
+          });
       }
     }
 
@@ -211,17 +246,22 @@ class _SettingAccountState extends State<SettingAccount> {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         children: [
-          Material(
-            clipBehavior: Clip.hardEdge,
-            child: CircleAvatar(
+          CircleAvatar(
+            radius: (size.width + size.height) / 15.0,
+            backgroundColor: Themes().transparent,
+            child: dataUser.isNotEmpty && dataUser['photoURL'] != null ? CircleAvatar(
               backgroundColor: Themes().transparent,
               radius: (size.width + size.height) / 15.0,
-              child: Image.asset("lib/assets/images/user.png"),
+              backgroundImage: NetworkImage(dataUser['photoURL']),
+            ) : CircleAvatar(
+              backgroundColor: Themes().transparent,
+              radius: (size.width + size.height) / 15.0,
+              backgroundImage: const AssetImage("lib/assets/images/user.png"),
             ),
           ),
           const SizedBox(height: 10.0,),
           InkWell(
-            onTap: (){},
+            onTap: changeImage,
             highlightColor: Themes().transparent,
             splashColor: Themes().transparent,
             child: Text(

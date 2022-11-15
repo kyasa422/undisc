@@ -7,14 +7,20 @@ TextFormField textFormField({
   String? hintText,
   bool obscureText = false,
   String? errorText,
-  TextInputType? keyboardType
+  TextInputType? keyboardType,
+  int? minLines,
+  int? maxLines,
+  TextInputAction? textInputAction
 }) {
   return TextFormField(
     controller: controller,
     keyboardType: keyboardType,
     validator: validator,
+    minLines: minLines,
+    maxLines: maxLines,
     autovalidateMode: AutovalidateMode.onUserInteraction,
     obscureText: obscureText,
+    textInputAction: textInputAction,
     decoration: InputDecoration(
       filled: true,
       fillColor: Themes().grey300,

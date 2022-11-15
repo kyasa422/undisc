@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:undisc/page/profile/profile.dart';
 import '../../themes/themes.dart';
 
-Container appBar(BuildContext context, Size size) {
+Container appBar(BuildContext context, Size size, Map<String, dynamic> data, {Function()? onTapAvatar}) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 20.0),
     margin: const EdgeInsets.only(top: 10.0),
@@ -24,7 +23,7 @@ Container appBar(BuildContext context, Size size) {
             SizedBox(
               width: size.width / 1.5,
               child: Text(
-                "Eugene Feilian Putra Rangga",
+                data.isNotEmpty && data['name'] != null ? data['name'] : '...',
                 softWrap: false,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -38,15 +37,9 @@ Container appBar(BuildContext context, Size size) {
         ),
 
         InkWell(
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Profile(uid: 'Jy2DE8Jj2zUEHtCS7Ty2oYKR3wG3',))),
+          onTap: onTapAvatar,
           borderRadius: BorderRadius.circular(100.0),
-          child: const Hero(
-            transitionOnUserGestures: true,
-            tag: "Profile",
-            child: CircleAvatar(
-              backgroundImage: NetworkImage("https://eugeneputra.web.app/img/img1.jpg"),
-            ),
-          ),
+          child: data['photoURL'],
         )
       ],
     ),

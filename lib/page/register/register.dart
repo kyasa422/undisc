@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypt/crypt.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:undisc/components/dialog_success.dart';
+import 'package:undisc/components/dialog_messages.dart';
 import 'package:undisc/components/dialog_waiting.dart';
 import 'package:undisc/page/login/login.dart';
 import 'package:undisc/page/splash_screen/splash_screen.dart';
@@ -21,6 +20,7 @@ class Register extends StatefulWidget {
 class _RegisterState extends State<Register> {
   late CollectionReference dbUsers;
   String? errorEmail;
+  String? errorNim;
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   TextEditingController nimImput = TextEditingController();
@@ -113,39 +113,48 @@ class _RegisterState extends State<Register> {
     void onSubmit() async{
       if(formKey.currentState!.validate()){
         dialogWating(context, size);
-        try{
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email: emailInput.text,
-            password: passwordInput.text
-          ).then((value) async {
-            await value.user?.sendEmailVerification().then((_) async {
-              await dbUsers.add({
-                "uid": FirebaseAuth.instance.currentUser!.uid,
-                "nim": nimImput.text,
-                "email": emailInput.text,
-                "password": Crypt.sha256(passwordInput.text).toString(),
-                "name": nameInput.text,
-                "study_program": studyProgramInput,
-                "photoURL": FirebaseAuth.instance.currentUser!.photoURL,
-              }).then((_){
+        await dbUsers.where("nim", isEqualTo: nimImput.text).get()
+          .then((value) async{
+            if(value.docs.isEmpty){
+              try{
+                await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                  email: emailInput.text,
+                  password: passwordInput.text
+                ).then((value) async {
+                  await value.user?.sendEmailVerification().then((_) async {
+                    await dbUsers.add({
+                      "uid": FirebaseAuth.instance.currentUser!.uid,
+                      "nim": nimImput.text,
+                      "email": emailInput.text,
+                      "password": Crypt.sha256(passwordInput.text).toString(),
+                      "name": nameInput.text,
+                      "study_program": studyProgramInput,
+                      "photoURL": FirebaseAuth.instance.currentUser!.photoURL,
+                      "role": "Student"
+                    }).then((_){
+                      Navigator.pop(context);
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const SplashScreen()), (route) => false);
+                    });
+                  });
+                });
+              }on FirebaseAuthException catch(e){
+                errorEmail = null;
+                if(e.code == "email-already-in-use"){
+                  errorEmail = "Email is available!";
+                }
+                setState((){});
                 Navigator.pop(context);
-                dialogSuccess(context, size).whenComplete(() => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const SplashScreen()), (route) => false));
+              }
+            }else{
+              setState((){
+                errorNim = "Nim is available!";
               });
-            });
+              Navigator.pop(context);
+            }
+          }).catchError((_){
+            Navigator.pop(context);
+            dialogMessages(context: context, title: "Error!", messages: "Server Error!", size: size);
           });
-        }on FirebaseAuthException catch(e){
-          errorEmail = null;
-          if(e.code == "email-already-in-use"){
-            errorEmail = "Email is available!";
-          }
-          setState((){});
-          Navigator.pop(context);
-        }catch(e){
-          if (kDebugMode) {
-            print("Error : $e");
-          }
-          Navigator.pop(context);
-        }
       }
     }
 
@@ -212,7 +221,7 @@ class _RegisterState extends State<Register> {
                             ),
                             child: Column(
                               children: <Widget>[
-                                textInputAuth(context: context, controller: nimImput, hintText: "NIM", keyboardType: TextInputType.number, validator: validatorNim),
+                                textInputAuth(context: context, controller: nimImput, hintText: "NIM", keyboardType: TextInputType.number, validator: validatorNim, errorText: errorNim),
                                 textInputAuth(context: context, controller: emailInput, hintText: "Email", keyboardType: TextInputType.emailAddress, validator: validatorEmail, errorText: errorEmail),
                                 textInputAuth(context: context, controller: nameInput, hintText: "Name", validator: validatorName),
                                 DropdownButtonFormField(
@@ -224,7 +233,7 @@ class _RegisterState extends State<Register> {
                                     hintStyle: TextStyle(color: Themes().grey)
                                   ),
                                   items: studyProgramList.map((e) => DropdownMenuItem(
-                                    value: e,
+                                    value: e.toLowerCase(),
                                     child: Text(e),
                                   )).toList(),
                                   validator: validatorStudyProgram,

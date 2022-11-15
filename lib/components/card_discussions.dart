@@ -1,16 +1,19 @@
 import 'package:countup/countup.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:undisc/lang/lang.dart';
-
+import 'package:intl/intl.dart';
 import '../themes/themes.dart';
+import 'package:undisc/string_extensions.dart';
 
 Container cardDiscussions(
   Size size,
   {
+    Map<String, dynamic>? data,
     Function()? onTapStatus,
     Function()? onTapArticle,
-    Function()? onTapComment
+    Function()? onTapComment,
+    Function()? onTapVoted,
+    bool votedActive = false
   }
 ) {
   return Container(
@@ -43,11 +46,13 @@ Container cardDiscussions(
                 child: ListTile(
                   dense: true,
                   contentPadding: const EdgeInsets.all(0.0),
-                  leading: const CircleAvatar(
-                    backgroundImage: NetworkImage("https://eugeneputra.web.app/img/img1.jpg"),
+                  leading: data!['user']['photoURL'] != null ? CircleAvatar(
+                    backgroundImage: NetworkImage(data['user']['photoURL']),
+                  ) : const CircleAvatar(
+                    backgroundImage: AssetImage("lib/assets/images/user.png"),
                   ),
                   title: Text(
-                    "Eugene Feilian Putra Rangga",
+                    data['user']['name'],
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -56,7 +61,7 @@ Container cardDiscussions(
                     ),
                   ), 
                   subtitle: Text(
-                    "Teknik Informatika",
+                    data['user']['role'] == "student" || data['user']['role'] == 'hima' ? data['user']['study_program'].toString().toTitleCase() : 'Universitas Dian Nusantara',
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: (size.width + size.height) / 100.0
@@ -65,19 +70,19 @@ Container cardDiscussions(
                 ),
               ),
 
-              InkWell(
+              onTapStatus != null ? InkWell(
                 onTap: onTapStatus,
-                child: Chip(label: Text("Process", style: TextStyle(fontSize: (size.width + size.height) / 90.0),))
-              )
+                child: Chip(label: Text("Timeline", style: TextStyle(fontSize: (size.width + size.height) / 90.0),))
+              ) : Container()
             ],
           ),
         ),
         const SizedBox(height: 5.0,),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 15.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15.0),
           child: Text(
-            "Download As PDF",
-            style: TextStyle(
+            data['discussion']['title'],
+            style: const TextStyle(
               fontWeight: FontWeight.bold
             ),
           ),
@@ -86,7 +91,7 @@ Container cardDiscussions(
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15.0),
           child: Text(
-            "16 Oct 2022",
+            DateFormat("dd MMM yyyy").format(DateTime.parse(data['discussion']['date'])).toString(),
             style: TextStyle(
               color: Themes().grey400,
               fontSize: (size.height + size.width) / 100
@@ -101,7 +106,7 @@ Container cardDiscussions(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
               child: Text(
-                Lang().lorem,
+                data['discussion']['content'],
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -126,8 +131,9 @@ Container cardDiscussions(
                     clipBehavior: Clip.hardEdge,
                     color: Themes().transparent,
                     child: IconButton(
-                      onPressed: (){}, 
-                      icon: const FaIcon(FontAwesomeIcons.star),
+                      onPressed: onTapVoted, 
+                      color: votedActive ? Themes().primary : null,
+                      icon: votedActive ? const FaIcon(FontAwesomeIcons.solidStar) : const FaIcon(FontAwesomeIcons.star)
                     ),
                   ),
                 ),
@@ -153,8 +159,8 @@ Container cardDiscussions(
                 children: [
                   Countup(
                     begin: 0, 
-                    end: 2235,
-                    duration: const Duration(seconds: 3),
+                    end: data['discussion']['voted'] != null ? double.tryParse(data['discussion']['voted'].toString()) ?? 0.0 : 0.0,
+                    duration: const Duration(seconds: 2),
                     separator: ",",
                     style: TextStyle(
                       fontSize: (size.width + size.height) / 50.0

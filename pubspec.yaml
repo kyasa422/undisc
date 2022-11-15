@@ -45,6 +45,9 @@ dependencies:
   firebase_auth: ^4.1.0
   crypt: ^4.2.1
   firebase_storage: ^11.0.5
+  image_picker: ^0.8.6
+  path: ^1.8.2
+  intl: ^0.17.0
   
 
 flutter_icons:

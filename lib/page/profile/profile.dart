@@ -8,6 +8,7 @@ import 'package:undisc/page/profile/photo_zoom.dart';
 import 'package:undisc/page/settings/settings.dart';
 import 'package:undisc/page/splash_screen/splash_screen.dart';
 import 'package:undisc/themes/themes.dart';
+import 'package:undisc/string_extensions.dart';
 
 class Profile extends StatefulWidget {
   final String uid;
@@ -78,12 +79,16 @@ class _ProfileState extends State<Profile> {
                       ),
                       child: Hero(
                         tag: "Profile",
-                        child: dataUser.isNotEmpty && dataUser["photoURL"] != null ? InkWell(
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PhotoZoom(urlPhoto: dataUser['photoURL']))),
-                          borderRadius: BorderRadius.circular(100.0),
-                          child: CircleAvatar(
-                            radius: (size.width + size.height) / 22.0,
-                            backgroundImage: NetworkImage(dataUser["photoURL"]),
+                        child: dataUser.isNotEmpty && dataUser["photoURL"] != null ? Material(
+                          color: Themes().transparent,
+                          child: InkWell(
+                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PhotoZoom(urlPhoto: dataUser['photoURL']))),
+                            borderRadius: BorderRadius.circular(100.0),
+                            child: CircleAvatar(
+                              backgroundColor: Themes().transparent,
+                              radius: (size.width + size.height) / 22.0,
+                              backgroundImage: NetworkImage(dataUser["photoURL"]),
+                            ),
                           ),
                         ) : CircleAvatar(
                           backgroundColor: Themes().transparent,
@@ -126,7 +131,8 @@ class _ProfileState extends State<Profile> {
                   ),
                 ),
                 Text(
-                  dataUser.isNotEmpty ? dataUser["study_program"] : "...",
+                  dataUser.isNotEmpty ? dataUser['role'] == "student" || dataUser['role'] == 'hima' ? 
+                    dataUser['study_program'].toString().toTitleCase() : "Universitas Dian Nusantara" : "...",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Themes().grey300,
@@ -157,7 +163,7 @@ class _ProfileState extends State<Profile> {
                   ]
                 ),
                 child: InkWell(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsProfile())),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsProfile())).then((_){setState((){});}),
                   highlightColor: Themes().transparent,
                   splashColor: Themes().transparent,
                   child: Chip(
@@ -272,9 +278,9 @@ class _ProfileState extends State<Profile> {
             title: Text(Lang().discussion, style: TextStyle(color: Themes().grey400),),
           ),
 
-          Column(
-            children: List.generate(10, (index) => Container(margin: const EdgeInsets.only(bottom: 20.0), child: cardDiscussions(size),)),
-          )
+          // Column(
+          //   children: List.generate(10, (index) => Container(margin: const EdgeInsets.only(bottom: 20.0), child: cardDiscussions(size),)),
+          // )
         ],
       ),
     );

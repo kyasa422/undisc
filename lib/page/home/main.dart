@@ -1,3 +1,6 @@
+import 'package:badges/badges.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -18,6 +21,16 @@ class Main extends StatefulWidget {
 
 class _MainState extends State<Main> {
   int bottomPageController = 0;
+
+  late Stream<QuerySnapshot> dbNotifications;
+  late User? user;
+
+  @override
+  void initState(){
+    super.initState();
+    user = FirebaseAuth.instance.currentUser;
+    dbNotifications = FirebaseFirestore.instance.collection("notifications").where("destinations", isEqualTo: user?.uid).where("read", isEqualTo: false).snapshots();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +107,25 @@ class _MainState extends State<Main> {
                   ),
                   GButton(
                     icon: FontAwesomeIcons.solidBell,
+                    leading: StreamBuilder<QuerySnapshot>(
+                      stream: dbNotifications,
+                      builder: (context, snapshot) {
+                        if(snapshot.connectionState == ConnectionState.waiting){
+                          return FaIcon(FontAwesomeIcons.solidBell, size: (size.width + size.height) / 77.9,);
+                        }
+
+                        if(snapshot.data!.size == 0){
+                          return FaIcon(FontAwesomeIcons.solidBell, size: (size.width + size.height) / 77.9,);
+                        }
+
+                        return Badge(
+                          badgeColor: Themes().primary,
+                          badgeContent: Text(snapshot.data!.size.toString(), style: TextStyle(fontSize: (size.width + size.height) / 110.0, color: Themes().white),),
+                          position: BadgePosition.topEnd(top: -11, end: -9),
+                          child: FaIcon(FontAwesomeIcons.solidBell, size: (size.width + size.height) / 77.9,),
+                        );
+                      }
+                    ),
                     text: Lang().notifications,
                   ),
                 ]
